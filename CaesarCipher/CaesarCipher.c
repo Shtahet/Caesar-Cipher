@@ -23,7 +23,10 @@ int main()
 		if (a[n] == '\n' || a[n] == EOF) {
 			break;
 		}
-		if (a[n] < 64 || a[n] > 123 || (a[n] > 90 && a[n] < 97)) { err = 1; }
+		if (a[n] < 'A' || a[n] > 'z' || (a[n] > 'Z' && a[n] < 'a'))
+		{ 
+			err = 1; 
+		}
 		n += 1;
 		if (n == w) { w = w * 2; a = (char*)realloc(a, w * sizeof(char)); }
 	}
