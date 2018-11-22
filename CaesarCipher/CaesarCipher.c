@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
@@ -39,7 +40,7 @@ int main()
 	if (err == 1) { fprintf(stderr, "Error: Chybny vstup!\n"); r = 100; }
 	else if (k != n) { fprintf(stderr, "Error: Chybna delka vstupu!\n"); r = 101; }
 	else {
-		int array[n];
+		int* array = (int*)malloc(n * sizeof(int));
 		for (int i = 0; i < n; i++) {
 			for (int j = 0; j < 52; j++) {
 				if (a[i] == alp[j])  g = j;
@@ -69,7 +70,7 @@ int main()
 	return r;
 }
 
-int find_key(int size, int x[size]) {
+int find_key(int size, int  x[]) {
 	int k, i, j, r = 0, z = 1;
 	for (i = 0; i < size - 1; i++) {
 		for (j = i + 1; j < size; j++) {
