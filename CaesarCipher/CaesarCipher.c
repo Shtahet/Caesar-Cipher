@@ -6,7 +6,7 @@
 
 #define START_INDEX_FOR_UPPERCASE_LETTER	26
 #define ALPHABET_SIZE						52
-void *realloc(void *aptr, size_t bytes);
+//void *realloc(void *aptr, size_t bytes);
 int IsValidLetter(char*);
 int IsUpperCaseLetter(char* letter);
 int GetDictionaryIndex(char* letter);
@@ -31,6 +31,7 @@ int main()
 	encryptedData = (char*)malloc(defaultBufferSize * sizeof(char));
 
 	//read encrypted data
+	printf("Enter encoding string:\n");
 	while (1) {
 		scanf("%c", &encryptedData[eds]);
 
@@ -53,13 +54,14 @@ int main()
 	}
 
 	//read wrong decoded data & write statistic
-	int* deltaStat = (char*)malloc(eds * sizeof(int));
+	int* deltaStat = (int*)malloc(eds * sizeof(int));
 	int currIdx = 0;
 	int offset, modeOffset;
 	char letter;
 
+	printf("Enter wrong decoding string:\n");
 	while (1) {
-		scanf("%c", letter);
+		scanf("%c", &letter);
 		if (letter == '\n' || letter == EOF)
 		{
 			break;
@@ -74,7 +76,8 @@ int main()
 			errCode = 1;
 			continue;
 		}
-
+		int a = GetDictionaryIndex(&letter);
+		int b = GetDictionaryIndex(&encryptedData[currIdx]);
 		offset = GetDictionaryIndex(&letter) - GetDictionaryIndex(&encryptedData[currIdx]);
 		if (offset < 0)
 		{
@@ -98,6 +101,7 @@ int main()
 		//look for offset & write correct answer
 		modeOffset = FindStatisticMode(currIdx, deltaStat);
 		
+		printf("\nCorrect decoded string:\n");
 		for (int i = 0; i < eds; ++i)
 		{
 			printf("%c", DecodeLetter(&encryptedData[i], modeOffset));
@@ -140,16 +144,34 @@ int IsUpperCaseLetter(char* letter) {
 }
 
 int GetDictionaryIndex(char* letter) {
-	return IsUpperCaseLetter(letter) ? *letter - 'A' + START_INDEX_FOR_UPPERCASE_LETTER : *letter - 'a';
+	int idx = 0;
+	if (IsUpperCaseLetter(letter))
+	{
+		idx = *letter - 'A' + START_INDEX_FOR_UPPERCASE_LETTER;
+	}
+	else
+	{
+		idx = *letter - 'a';
+	}
+	return idx;
 }
 
 char DecodeLetter(char* letter, int offset) {
 	int encodedLetterIndex = GetDictionaryIndex(letter) - offset;
 	if (encodedLetterIndex < 0)
 	{
-		encodedLetterIndex += ALPHABET_SIZE;
+		encodedLetterIndex += ALPHABET_SIZE - 1;
 	}
-	return (char)(encodedLetterIndex < START_INDEX_FOR_UPPERCASE_LETTER ? encodedLetterIndex + 'a' : encodedLetterIndex - START_INDEX_FOR_UPPERCASE_LETTER + 'A');
+	int letterIndex;
+	if (encodedLetterIndex < START_INDEX_FOR_UPPERCASE_LETTER)
+	{
+		letterIndex = encodedLetterIndex + 'a' - 1;
+	}
+	else
+	{
+		letterIndex = encodedLetterIndex - START_INDEX_FOR_UPPERCASE_LETTER - 1 + 'A';
+	}
+	return (char)letterIndex;
 }
 
 int FindStatisticMode(int size, int  x[]) {
