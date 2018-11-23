@@ -4,92 +4,174 @@
 #include <string.h>
 #include <stdlib.h>
 
-
+#define START_INDEX_FOR_UPPERCASE_LETTER	26
+#define ALPHABET_SIZE						52
 void *realloc(void *aptr, size_t bytes);
-int find_key(int, int[]);
+int IsValidLetter(char*);
+int IsUpperCaseLetter(char* letter);
+int GetDictionaryIndex(char* letter);
+char DecodeLetter(char* letter, int offset);
+int FindStatisticMode(int, int[]);
 
 int main()
 {
-	int w = 600000, v = 0, ww = 60000;
-	int n = 0, r = 0, f = 0, err = 0, g;
-	int k = 0, ke, key = 0;
-	char alp[52] = { 'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z' };
-	char *a;
-	char *b;
-	b = (char*)malloc(w * sizeof(char));
-	a = (char*)malloc(ww * sizeof(char));
+	//settings variables
+	const int alphabetSize = 52;					//26 upper case letters & 26 lower case letter
+	const int defaultBufferSize = 256;
+
+	int charOffset = 0;
+	int currentBufferSize = defaultBufferSize;
+	int eds = 0;									//Encrypted Data Size - lengs for encrypted array
+	int isUpperCase = 0;
+	int errCode = 0, exitCode = 0;
+
+	//char alp[52] = { 'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z' };
+
+	char* encryptedData;
+	encryptedData = (char*)malloc(defaultBufferSize * sizeof(char));
+
+	//read encrypted data
 	while (1) {
-		scanf("%c", &a[n]);
-		if (a[n] == '\n' || a[n] == EOF) {
+		scanf("%c", &encryptedData[eds]);
+
+		if (encryptedData[eds] == '\n' || encryptedData[eds] == EOF)
+		{
 			break;
 		}
-		if (a[n] < 'A' || a[n] > 'z' || (a[n] > 'Z' && a[n] < 'a'))
+
+		if (!IsValidLetter(&encryptedData[eds]))
 		{ 
-			err = 1; 
+			errCode = 1; 
 		}
-		n += 1;
-		if (n == w) { w = w * 2; a = (char*)realloc(a, w * sizeof(char)); }
+
+		++eds;
+		if (eds == currentBufferSize) 
+		{ 
+			currentBufferSize = eds + defaultBufferSize;
+			encryptedData = (char*)realloc(encryptedData, currentBufferSize);
+		}
 	}
-	w = 1;
+
+	//read wrong decoded data & write statistic
+	int* deltaStat = (char*)malloc(eds * sizeof(int));
+	int currIdx = 0;
+	int offset, modeOffset;
+	char letter;
+
 	while (1) {
-		scanf("%c", &b[k]);
-		if (b[k] == '\n' || b[k] == EOF) {
+		scanf("%c", letter);
+		if (letter == '\n' || letter == EOF)
+		{
 			break;
 		}
-		if (b[k] < 64 || b[k] > 123 || (b[k] > 90 && b[k] < 97)) { err = 1; }
-		k += 1;
-		if (k == w) { w = w * 2; b = (char*)realloc(b, w * sizeof(char)); }
-	}
-	if (err == 1) { fprintf(stderr, "Error: Chybny vstup!\n"); r = 100; }
-	else if (k != n) { fprintf(stderr, "Error: Chybna delka vstupu!\n"); r = 101; }
-	else {
-		int* array = (int*)malloc(n * sizeof(int));
-		for (int i = 0; i < n; i++) {
-			for (int j = 0; j < 52; j++) {
-				if (a[i] == alp[j])  g = j;
-				if (b[i] == alp[j]) f = j;
-			}
-			ke = f - g;
-			array[i] = ke;
+		if (currIdx > eds)
+		{
+			break;
 		}
-		if (n == 1) { printf("%c", b[0]); }
-		else {
-			key = find_key(n, array);
-			for (int i = 0; i < n; i++) {
-				for (int j = 0; j < 52; j++) {
-					v = j + key;
-					if (v < 0)v = v + 52;
-					if (v >= 52)v = v - 52;
-					if (a[i] == alp[j]) printf("%c", alp[v]);
-				}
-			}
+
+		if (!IsValidLetter(&letter)) 
+		{ 
+			errCode = 1;
+			continue;
+		}
+
+		offset = GetDictionaryIndex(&letter) - GetDictionaryIndex(&encryptedData[currIdx]);
+		if (offset < 0)
+		{
+			offset += alphabetSize;
+		}
+
+		deltaStat[currIdx++] = offset;
+	}
+
+	//check parsing for input data
+	if (errCode) 
+	{ 
+		fprintf(stderr, "Error: Chybny vstup!\n"); exitCode = 100; 
+	}
+	else if (eds != currIdx) 
+	{ 
+		fprintf(stderr, "Error: Chybna delka vstupu!\n"); exitCode = 101; 
+	}
+	else 
+	{
+		//look for offset & write correct answer
+		modeOffset = FindStatisticMode(currIdx, deltaStat);
+		
+		for (int i = 0; i < eds; ++i)
+		{
+			printf("%c", DecodeLetter(&encryptedData[i], modeOffset));
 		}
 	}
-	free(a);
-	a = NULL;
-	free(b);
-	b = NULL;
-	if (err == 0 && k == n)printf("\n");
-	return r;
+
+	free(deltaStat);
+	deltaStat = NULL;
+	free(encryptedData);
+	encryptedData = NULL;
+
+	if (errCode == 0 && eds != currIdx)
+		printf("\n");
+
+	return exitCode;
 }
 
-int find_key(int size, int  x[]) {
-	int k, i, j, r = 0, z = 1;
-	for (i = 0; i < size - 1; i++) {
-		for (j = i + 1; j < size; j++) {
-			if (x[i] == x[j]) {
-				r += 1;
-				if (z < r)z = r;
-			}
-		}r = 0;
+int IsValidLetter(char* letter) {
+	if (*letter < 'A')
+	{
+		return 0;
 	}
-	for (i = 0; i < size - 1; i++) {
-		for (j = i + 1; j < size; j++) {
-			if (x[i] == x[j]) {
-				r += 1;
-				if (r == z)k = x[i];
-			}
+	if (*letter > 'z')
+	{
+		return 0;
+	}
+	if (*letter > 'Z' && *letter < 'a')
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
+int IsUpperCaseLetter(char* letter) {
+	if (*letter < 'a')
+		return 1;
+	else
+		return 0;
+}
+
+int GetDictionaryIndex(char* letter) {
+	return IsUpperCaseLetter(letter) ? *letter - 'A' + START_INDEX_FOR_UPPERCASE_LETTER : *letter - 'a';
+}
+
+char DecodeLetter(char* letter, int offset) {
+	int encodedLetterIndex = GetDictionaryIndex(letter) - offset;
+	if (encodedLetterIndex < 0)
+	{
+		encodedLetterIndex += ALPHABET_SIZE;
+	}
+	return (char)(encodedLetterIndex < START_INDEX_FOR_UPPERCASE_LETTER ? encodedLetterIndex + 'a' : encodedLetterIndex - START_INDEX_FOR_UPPERCASE_LETTER + 'A');
+}
+
+int FindStatisticMode(int size, int  x[]) {
+
+	int* dictionary = (int*)malloc(ALPHABET_SIZE * sizeof(int));
+	int mode;
+
+	for (int i = 0; i < size; ++i)
+	{
+		dictionary[x[i]]++;
+	}
+
+	int maxFrequency = dictionary[0];
+	mode = 0;
+	for (int i = 0; i < ALPHABET_SIZE; ++i) 
+	{
+		if (dictionary[i] > maxFrequency)
+		{
+			maxFrequency = dictionary[i];
+			mode = i;
 		}
 	}
-	return k;
+	free(dictionary);
+	return mode;
 }
